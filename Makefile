@@ -163,8 +163,8 @@ export srctree objtree VPATH
 # Alternatively CROSS_COMPILE can be set in the environment.
 # Default value for CROSS_COMPILE is not to prefix executables
 
-ARCH            ?= sandbox
-CROSS_COMPILE   ?=
+ARCH            ?= arm
+CROSS_COMPILE   ?= arm-linux-gnueabihf-
 
 # Architecture as present in compile.h
 UTS_MACHINE := $(ARCH)

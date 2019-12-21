@@ -17,3 +17,7 @@ image-$(CONFIG_MACH_MICROCHIP_KSZ9477_EVB) += barebox-microchip-ksz9477-evb.img
 pblb-$(CONFIG_MACH_SAMA5D27_SOM1) += start_sama5d27_som1_ek
 FILE_barebox-sama5d27-som1-ek.img = start_sama5d27_som1_ek.pblb
 image-$(CONFIG_MACH_SAMA5D27_SOM1) += barebox-sama5d27-som1-ek.img
+
+pblb-$(CONFIG_MACH_SAMA5D2_XPLAINED) += start_sama5d2_xplained
+FILE_barebox-sama5d2_xplained.img = start_sama5d2_xplained.pblb
+image-$(CONFIG_MACH_SAMA5D2_XPLAINED) += barebox-sama5d2_xplained.img

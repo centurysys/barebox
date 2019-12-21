@@ -582,6 +582,14 @@ config MACH_SAMA5D27_SOM1
 	help
 	  Select this if you are using Microchip's sama5d27 SoM evaluation kit
 
+config MACH_SAMA5D2_XPLAINED
+	bool "Microchip SAMA5D2 xplained Evaluation Kit"
+	select SOC_SAMA5D2
+	select OFDEVICE
+	select COMMON_CLK_OF_PROVIDER
+	help
+	  Select this if you are using Microchip's sama5d2 xplained evaluation kit
+
 endif
 
 comment "AT91 Board Options"
