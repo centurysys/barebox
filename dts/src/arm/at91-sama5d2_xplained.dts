@@ -75,6 +75,7 @@
 			spi0: spi@f8000000 {
 				pinctrl-names = "default";
 				pinctrl-0 = <&pinctrl_spi0_default>;
+				cs-gpios = <&pioA PIN_PA17 GPIO_ACTIVE_LOW>;
 				status = "okay";
 
 				m25p80@0 {
