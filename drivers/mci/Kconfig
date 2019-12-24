@@ -124,6 +124,14 @@ config MCI_ATMEL
 	  Enable this entry to add support to read and write SD cards on a
 	  Atmel AT91.
 
+config MCI_SAMA5D2
+	bool "ATMEL (SAMA5D2)"
+	depends on ARCH_AT91
+	select MCI_SDHCI
+	help
+	  Enable this entry to add support to read and write SD cards on a
+	  Atmel AT91.
+
 config MCI_MMCI
 	bool "ARM PL180 MMCI"
 	depends on ARM_AMBA

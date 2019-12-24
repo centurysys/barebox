@@ -16,6 +16,11 @@
 	model = "Atmel SAMA5D2 Xplained";
 	compatible = "atmel,sama5d2-xplained", "atmel,sama5d2", "atmel,sama5";
 
+	aliases {
+		emmc = &sdmmc0;
+		sd = &sdmmc1;
+	};
+
 	chosen {
 		stdout-path = "serial0:115200n8";
 	};
@@ -58,6 +63,7 @@
 			pinctrl-names = "default";
 			pinctrl-0 = <&pinctrl_sdmmc0_default>;
 			non-removable;
+			no-sd;
 			mmc-ddr-1_8v;
 			status = "okay";
 		};
@@ -514,7 +520,7 @@
 							 <PIN_PA7__SDMMC0_DAT5>,
 							 <PIN_PA8__SDMMC0_DAT6>,
 							 <PIN_PA9__SDMMC0_DAT7>;
-						bias-disable;
+						bias-pull-up;
 					};
 
 					ck_cd_rstn_vddsel {
@@ -533,7 +539,7 @@
 							 <PIN_PA19__SDMMC1_DAT1>,
 							 <PIN_PA20__SDMMC1_DAT2>,
 							 <PIN_PA21__SDMMC1_DAT3>;
-						bias-disable;
+						bias-pull-up;
 					};
 
 					conf-ck_cd {
