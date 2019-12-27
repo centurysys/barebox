@@ -50,6 +50,9 @@ struct sama5d2_sdhci {
 	struct clk *gclk;
 };
 
+#define SIZE_512K (1 << 19)
+static char *dma_buffer = NULL;
+
 #define priv_from_mci_host(h)	\
 	container_of(h, struct sama5d2_sdhci, mci);
 
@@ -160,21 +163,20 @@ static int sama5d2_sdhci_mci_send_cmd(struct mci_host *mci, struct mci_cmd *cmd,
 	/* setup transfer data */
 	if (data) {
 		num_bytes = data->blocks * data->blocksize;
-		if (data->flags & MMC_DATA_READ)
-			sdhci_write32(&host->sdhci, SDHCI_DMA_ADDRESS, (u32)data->dest);
-		else
-			sdhci_write32(&host->sdhci, SDHCI_DMA_ADDRESS, (u32)data->src);
+
+		if (data->flags & MMC_DATA_WRITE) {
+			memcpy(dma_buffer, data->src, num_bytes);
+		}
+
+		sdhci_write32(&host->sdhci, SDHCI_DMA_ADDRESS, (u32) dma_buffer);
 		sdhci_write16(&host->sdhci, SDHCI_BLOCK_SIZE, SDHCI_DMA_BOUNDARY_512K |
 				SDHCI_TRANSFER_BLOCK_SIZE(data->blocksize));
 		sdhci_write16(&host->sdhci, SDHCI_BLOCK_COUNT, data->blocks);
 		sdhci_write8(&host->sdhci, SDHCI_TIMEOUT_CONTROL, 0xe);
 
 		if (data->flags & MMC_DATA_WRITE)
-			dma_sync_single_for_device((unsigned long)data->src,
+			dma_sync_single_for_device((unsigned long) dma_buffer,
 						    num_bytes, DMA_TO_DEVICE);
-		else
-			dma_sync_single_for_device((unsigned long)data->dest,
-						    num_bytes, DMA_FROM_DEVICE);
 	}
 
 	/* setup transfer mode */
@@ -204,13 +206,6 @@ static int sama5d2_sdhci_mci_send_cmd(struct mci_host *mci, struct mci_cmd *cmd,
 	udelay(1000);
 
 	if (data) {
-		if (data->flags & MMC_DATA_WRITE)
-			dma_sync_single_for_cpu((unsigned long)data->src,
-						num_bytes, DMA_TO_DEVICE);
-		else
-			dma_sync_single_for_cpu((unsigned long)data->dest,
-					 num_bytes, DMA_FROM_DEVICE);
-
 		ret = sama5d2_sdhci_wait_for_done(host, SDHCI_INT_XFER_COMPLETE);
 		if (ret) {
 			dev_err(host->mci.hw_dev, "error while transfering data for command %d\n",
@@ -220,6 +215,12 @@ static int sama5d2_sdhci_mci_send_cmd(struct mci_host *mci, struct mci_cmd *cmd,
 				sdhci_read16(&host->sdhci, SDHCI_INT_NORMAL_STATUS),
 				sdhci_read16(&host->sdhci, SDHCI_INT_ERROR_STATUS));
 			goto cmd_error;
+		}
+
+		if (data->flags & MMC_DATA_READ) {
+			dma_sync_single_for_cpu((unsigned long) dma_buffer,
+						num_bytes, DMA_FROM_DEVICE);
+			memcpy(data->dest, dma_buffer, num_bytes);
 		}
 	}
 
@@ -471,7 +472,7 @@ static int sama5d2_sdhci_probe(struct device_d *dev)
 	host = xzalloc(sizeof(*host));
 	host->dev = dev;
 	host->base = dev_request_mem_region(dev, 0);
-	host->mci.max_req_size = 0x8000;
+	//host->mci.max_req_size = 0x8000;
 	host->mci.hw_dev = dev;
 	host->mci.send_cmd = sama5d2_sdhci_mci_send_cmd;
 	host->mci.set_ios = sama5d2_sdhci_mci_set_ios;
@@ -490,9 +491,21 @@ static int sama5d2_sdhci_probe(struct device_d *dev)
 
 	sama5d2_sdhci_set_mci_caps(host);
 
+	if (!dma_buffer) {
+		dma_buffer = memalign(SIZE_512K, SIZE_512K);
+
+		if (!dma_buffer) {
+			free(host);
+			ret = -ENOMEM;
+			goto ret;
+		}
+	}
+
 	ret = mci_register(&host->mci);
 	if (ret)
 		free(host);
+
+ret:
 	return ret;
 }
 

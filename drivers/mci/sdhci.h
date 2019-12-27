@@ -13,7 +13,7 @@
 #define  SDHCI_DMA_BOUNDARY_8K			SDHCI_DMA_BOUNDARY(1)
 #define  SDHCI_DMA_BOUNDARY_4K			SDHCI_DMA_BOUNDARY(0)
 #define  SDHCI_DMA_BOUNDARY(x)			(((x) & 0x7) << 12)
-#define  SDHCI_TRANSFER_BLOCK_SIZE(x)		((x) & 0xfff)
+#define  SDHCI_TRANSFER_BLOCK_SIZE(x)		((x) & 0x3ff)
 #define SDHCI_BLOCK_COUNT					0x06
 #define SDHCI_ARGUMENT						0x08
 #define SDHCI_TRANSFER_MODE__COMMAND				0x0c
