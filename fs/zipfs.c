@@ -215,6 +215,7 @@ static void zipfs_remove(struct device_d *dev)
 		free(d);
 	}
 
+	free(priv->filename);
 	free(priv);
 }
 
@@ -318,14 +319,27 @@ static int zipfs_probe(struct device_d *dev)
 {
 	struct fs_device_d *fsdev = dev_to_fs_device(dev);
 	struct zipfs_handle *priv;
-	int ret = 0;
+	int ret = 0, len;
 
 	priv = xzalloc(sizeof(struct zipfs_handle));
 	INIT_LIST_HEAD(&priv->list);
 	dev->priv = priv;
 
-	priv->filename = fsdev->backingstore;
-	dev_dbg(dev, "mount: %s\n", fsdev->backingstore);
+	if (fsdev->backingstore[0] == '/') {
+		/* full-path */
+		len = strlen(fsdev->backingstore);
+		priv->filename = xzalloc(len + 1);
+		strncpy(priv->filename, fsdev->backingstore, len);
+	} else {
+		/* relative path */
+		const char *cwd = getcwd();
+
+		len = strlen(cwd) + strlen(fsdev->backingstore);
+		priv->filename = xzalloc(len + 1);
+		sprintf(priv->filename, "%s/%s", cwd, fsdev->backingstore);
+	}
+
+	dev_dbg(dev, "mount: %s\n", priv->filename);
 
 	ret = __zip_open(priv);
 	if (ret)
