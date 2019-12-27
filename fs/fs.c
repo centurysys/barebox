@@ -2711,6 +2711,8 @@ int chdir(const char *pathname)
 	realpath = dpath(path.dentry, d_root);
 	strcpy(cwd, realpath);
 	free(realpath);
+	if (cwd_mnt)
+		mntput(cwd_mnt);
 	cwd_dentry = path.dentry;
 	cwd_mnt = path.mnt;
 
