@@ -335,7 +335,7 @@ static int zipfs_probe(struct device_d *dev)
 		const char *cwd = getcwd();
 
 		len = strlen(cwd) + strlen(fsdev->backingstore);
-		priv->filename = xzalloc(len + 1);
+		priv->filename = xzalloc(len + 2); /* '/' + '\0' */
 		sprintf(priv->filename, "%s/%s", cwd, fsdev->backingstore);
 	}
 
