@@ -15,37 +15,11 @@
 #include <debug_ll.h>
 #include <mach/at91_dbgu.h>
 
-#define RGB_LED_GREEN (1 << 0)
-#define RGB_LED_RED   (1 << 1)
-#define RGB_LED_BLUE  (1 << 2)
-
 /* PCK = 492MHz, MCK = 164MHz */
 #define MASTER_CLOCK	164000000
 
 #define sama5d2_pmc_enable_periph_clock(clk) \
 	at91_pmc_sam9x5_enable_periph_clock(IOMEM(SAMA5D2_BASE_PMC), clk)
-
-static void ek_turn_led(unsigned color)
-{
-	struct {
-		unsigned long pio;
-		unsigned bit;
-		unsigned color;
-	} *led, leds[] = {
-		{ .pio = SAMA5D2_BASE_PIOB, .bit = 6, .color = color & RGB_LED_RED },
-		{ .pio = SAMA5D2_BASE_PIOB, .bit = 5, .color = color & RGB_LED_GREEN },
-		{ .pio = SAMA5D2_BASE_PIOB, .bit = 0, .color = color & RGB_LED_BLUE },
-		{ /* sentinel */ },
-	};
-
-	sama5d2_pmc_enable_periph_clock(SAMA5D2_ID_PIOB);
-
-	for (led = leds; led->pio; led++) {
-		at91_mux_gpio4_enable(IOMEM(led->pio), BIT(led->bit));
-		at91_mux_gpio4_input(IOMEM(led->pio), BIT(led->bit), false);
-		at91_mux_gpio4_set(IOMEM(led->pio), BIT(led->bit), led->color);
-	}
-}
 
 static void ek_dbgu_init(void)
 {
@@ -78,6 +52,5 @@ ENTRY_FUNCTION(start_sama5d2_xplained, r0, r1, r2)
 
 	fdt = __dtb_z_at91_sama5d2_xplained_start + get_runtime_offset();
 
-	ek_turn_led(RGB_LED_GREEN);
 	barebox_arm_entry(SAMA5_DDRCS, SZ_512M, fdt);
 }
