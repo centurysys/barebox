@@ -872,15 +872,16 @@ static void mci_extract_card_capacity_from_csd(struct mci *mci)
 				mci->ext_csd[EXT_CSD_SEC_COUNT + 1] << 8 |
 				mci->ext_csd[EXT_CSD_SEC_COUNT + 2] << 16 |
 				mci->ext_csd[EXT_CSD_SEC_COUNT + 3] << 24;
+			mci->capacity *= 512;
 		}
 	} else {
 		cmult = UNSTUFF_BITS(mci->csd, 47, 3);
 		csize = UNSTUFF_BITS(mci->csd, 62, 12);
 		mci->capacity = (csize + 1) << (cmult + 2);
+		mci->capacity *= 1 << UNSTUFF_BITS(mci->csd, 80, 4);
 	}
 
-	mci->capacity *= 1 << UNSTUFF_BITS(mci->csd, 80, 4);
-	dev_dbg(&mci->dev, "Capacity: %u MiB\n", (unsigned)(mci->capacity >> 20));
+	dev_info(&mci->dev, "Capacity: %u MiB\n", (unsigned)(mci->capacity >> 20));
 }
 
 /**
