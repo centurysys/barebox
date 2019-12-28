@@ -244,7 +244,7 @@ static u16 sama5d2_sdhci_get_clock_divider(struct sama5d2_sdhci *host, u32 reqcl
 
 static void sama5d2_sdhci_mci_set_ios(struct mci_host *mci, struct mci_ios *ios)
 {
-	u16 val, div, clk;
+	u16 val, div;
 	u64 start;
 	struct sama5d2_sdhci *host = priv_from_mci_host(mci);
 
@@ -282,10 +282,6 @@ static void sama5d2_sdhci_mci_set_ios(struct mci_host *mci, struct mci_ios *ios)
 
 	sdhci_write8(&host->sdhci, SDHCI_HOST_CONTROL, val);
 	
-	//clk = sdhci_read16(&host->sdhci, SDHCI_CLOCK_CONTROL);
-	//clk &= SDHCI_INTCLOCK_EN;
-	//sdhci_write16(&host->sdhci, SDHCI_CLOCK_CONTROL, clk);
-
 	if (ios->clock == 0)
 		return;
 	
