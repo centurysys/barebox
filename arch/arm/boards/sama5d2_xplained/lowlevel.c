@@ -15,8 +15,8 @@
 #include <debug_ll.h>
 #include <mach/at91_dbgu.h>
 
-/* PCK = 492MHz, MCK = 164MHz */
-#define MASTER_CLOCK	164000000
+/* PCK = 498MHz, MCK = 166MHz */
+#define MASTER_CLOCK	166000000
 
 #define sama5d2_pmc_enable_periph_clock(clk) \
 	at91_pmc_sam9x5_enable_periph_clock(IOMEM(SAMA5D2_BASE_PMC), clk)
