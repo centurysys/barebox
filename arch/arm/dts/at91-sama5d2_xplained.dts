@@ -18,19 +18,39 @@
 	};
 };
 
-&qspi1 {
-	flash@0 {
+&spi0 {
+	m25p80@0 {
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		partition@0 {
-			label = "barebox";
-			reg = <0x0 0x80000>;
+			label = "at91boot";
+			reg = <0x0 0x8000>;
 		};
 
-		barebox_env: partition@80000 {
-			label = "barebox-environment";
-			reg = <0x80000 0x80000>;
+		barebox_env: partition@1 {
+			label = "barebox.env";
+			reg = <0x8000 0x8000>;
+		};
+
+		barebox_bin: partition@2 {
+			label = "barebox.bin";
+			reg = <0x10000 0x80000>;
+		};
+
+		hist_firmup: partition@3 {
+			label = "hist_firmup";
+			reg = <0x90000 0x20000>;
+		};
+
+		hist_boot: partition@4 {
+			label = "hist_boot";
+			reg = <0xb0000 0xf0000>;
+		};
+
+		oops: partition@5 {
+			label = "OOPS";
+			reg = <0x1a0000 0x100000>;
 		};
 	};
 };
