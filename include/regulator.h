@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
 #ifndef __REGULATOR_H
 #define __REGULATOR_H
 
@@ -116,6 +117,7 @@ void regulators_print(void);
 #ifdef CONFIG_REGULATOR
 
 struct regulator *regulator_get(struct device_d *, const char *);
+struct regulator *regulator_get_name(const char *name);
 int regulator_enable(struct regulator *);
 int regulator_disable(struct regulator *);
 int regulator_is_enabled_regmap(struct regulator_dev *);

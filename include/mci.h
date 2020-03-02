@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * (C) Copyright 2010 Juergen Beisert, Pengutronix
  *
@@ -10,17 +11,6 @@
  *
  * See file CREDITS for list of people who contributed to this
  * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
  */
 
 #ifndef _MCI_H_
@@ -367,6 +357,18 @@ struct mci_data {
 	unsigned blocksize;	/**< block size in bytes (mostly 512) */
 };
 
+enum mci_timing {
+	MMC_TIMING_LEGACY	= 0,
+	MMC_TIMING_MMC_HS	= 1,
+	MMC_TIMING_SD_HS	= 2,
+	MMC_TIMING_UHS_SDR12	= MMC_TIMING_LEGACY,
+	MMC_TIMING_UHS_SDR25	= MMC_TIMING_SD_HS,
+	MMC_TIMING_UHS_SDR50	= 3,
+	MMC_TIMING_UHS_SDR104	= 4,
+	MMC_TIMING_UHS_DDR50	= 5,
+	MMC_TIMING_MMC_HS200	= 6,
+};
+
 struct mci_ios {
 	unsigned int	clock;			/* clock rate */
 
@@ -376,17 +378,7 @@ struct mci_ios {
 #define MMC_BUS_WIDTH_4		2
 #define MMC_BUS_WIDTH_8		3
 
-	unsigned char	timing;			/* timing specification used */
-
-#define MMC_TIMING_LEGACY	0
-#define MMC_TIMING_MMC_HS	1
-#define MMC_TIMING_SD_HS	2
-#define MMC_TIMING_UHS_SDR12	MMC_TIMING_LEGACY
-#define MMC_TIMING_UHS_SDR25	MMC_TIMING_SD_HS
-#define MMC_TIMING_UHS_SDR50	3
-#define MMC_TIMING_UHS_SDR104	4
-#define MMC_TIMING_UHS_DDR50	5
-#define MMC_TIMING_MMC_HS200	6
+	enum mci_timing	timing;			/* timing specification used */
 
 #define MMC_SDR_MODE		0
 #define MMC_1_2V_DDR_MODE	1
@@ -408,6 +400,7 @@ struct mci_host {
 	unsigned f_max;		/**< host interface upper limit */
 	unsigned clock;		/**< Current clock used to talk to the card */
 	unsigned bus_width;	/**< used data bus width to the card */
+	enum mci_timing timing;	/**< used timing specification to the card */
 	unsigned max_req_size;
 	unsigned dsr_val;	/**< optional dsr value */
 	int use_dsr;		/**< optional dsr usage flag */
@@ -468,7 +461,6 @@ struct mci {
 	int dsr_imp;		/**< DSR implementation state from CSD */
 	char *ext_csd;
 	int probe;
-	struct param_d *param_probe;
 	struct param_d *param_boot;
 	int bootpart;
 

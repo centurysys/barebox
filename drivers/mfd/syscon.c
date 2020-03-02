@@ -19,6 +19,7 @@
 #include <xfuncs.h>
 #include <of_address.h>
 #include <linux/err.h>
+#include <linux/clk.h>
 
 #include <mfd/syscon.h>
 
@@ -31,34 +32,13 @@ struct syscon {
 	struct regmap *regmap;
 };
 
-static int syscon_reg_write(void *context, unsigned int reg,
-			    unsigned int val)
-{
-	struct syscon *syscon = context;
-	writel(val, syscon->base + reg);
-	return 0;
-}
-
-static int syscon_reg_read(void *context, unsigned int reg,
-			   unsigned int *val)
-{
-	struct syscon *syscon = context;
-	*val = readl(syscon->base + reg);
-	return 0;
-}
-
-static const struct regmap_bus syscon_regmap_bus = {
-	.reg_write = syscon_reg_write,
-	.reg_read  = syscon_reg_read,
-};
-
 static const struct regmap_config syscon_regmap_config = {
 	.reg_bits = 32,
 	.val_bits = 32,
 	.reg_stride = 4,
 };
 
-static struct syscon *of_syscon_register(struct device_node *np)
+static struct syscon *of_syscon_register(struct device_node *np, bool check_clk)
 {
 	int ret;
 	struct syscon *syscon;
@@ -79,10 +59,23 @@ static struct syscon *of_syscon_register(struct device_node *np)
 
 	list_add_tail(&syscon->list, &syscon_list);
 
-	syscon->regmap = regmap_init(NULL,
-				     &syscon_regmap_bus,
-				     syscon,
-				     &syscon_regmap_config);
+	syscon->regmap = of_regmap_init_mmio_clk(np, NULL, syscon->base,
+					     &syscon_regmap_config);
+
+	if (check_clk) {
+		struct clk *clk = of_clk_get(np, 0);
+		if (IS_ERR(clk)) {
+			ret = PTR_ERR(clk);
+			/* clock is optional */
+			if (ret != -ENOENT)
+				goto err_map;
+		} else {
+			ret = regmap_mmio_attach_clk(syscon->regmap, clk);
+			if (ret)
+				goto err_map;
+		}
+	}
+
 	return syscon;
 
 err_map:
@@ -101,7 +94,7 @@ static struct syscon *node_to_syscon(struct device_node *np)
 		}
 
 	if (!syscon)
-		syscon = of_syscon_register(np);
+		syscon = of_syscon_register(np, true);
 
 	if (IS_ERR(syscon))
 		return ERR_CAST(syscon);

@@ -54,12 +54,12 @@ SECTIONS
 	.data.reloc : {
 		__rel_start = .;
 		BYTE(0x0)
-		. += (32 * 1024) - 1;
+		. += CONFIG_MIPS_RELOCATION_TABLE_SIZE - 1;
 	}
 
 	_end = .;
 
-	.bss __rel_start (OVERLAY) : {
+	.bss : {
 		__bss_start = .;
 		*(.sbss.*)
 		*(.bss.*)

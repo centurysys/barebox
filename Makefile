@@ -1,5 +1,5 @@
-VERSION = 2019
-PATCHLEVEL = 12
+VERSION = 2020
+PATCHLEVEL = 02
 SUBLEVEL = 0
 EXTRAVERSION =
 NAME = None
@@ -313,6 +313,7 @@ LDFLAGS_barebox	:= -Map barebox.map
 
 # Avoid 'Not enough room for program headers' error on binutils 2.28 onwards.
 LDFLAGS_barebox += $(call ld-option, --no-dynamic-linker)
+LDFLAGS_pbl += $(call ld-option, --no-dynamic-linker)
 
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)
 KERNELRELEASE = $(shell cat include/config/kernel.release 2> /dev/null)
@@ -328,6 +329,7 @@ export CPPFLAGS NOSTDINC_FLAGS LINUXINCLUDE OBJCOPYFLAGS LDFLAGS
 export CFLAGS CFLAGS_KERNEL
 export AFLAGS AFLAGS_KERNEL
 export LDFLAGS_barebox
+export LDFLAGS_pbl
 
 export CFLAGS_UBSAN
 

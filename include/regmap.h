@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
 #ifndef __REGMAP_H
 #define __REGMAP_H
 
@@ -37,10 +38,63 @@ struct regmap_bus {
 	regmap_hw_reg_read reg_read;
 };
 
+struct device_d;
+struct device_node;
+
 struct regmap *regmap_init(struct device_d *dev,
 			     const struct regmap_bus *bus,
 			     void *bus_context,
 			     const struct regmap_config *config);
+
+struct clk;
+
+/**
+ * of_regmap_init_mmio_clk() - Initialise register map with register clock
+ *
+ * @np: Device node that will be interacted with
+ * @clk_id: register clock consumer ID
+ * @regs: Pointer to memory-mapped IO region
+ * @config: Configuration for register map
+ *
+ * The return value will be an ERR_PTR() on error or a valid pointer to
+ * a struct regmap.
+ */
+struct regmap *of_regmap_init_mmio_clk(struct device_node *np, const char *clk_id,
+				       void __iomem *regs,
+				       const struct regmap_config *config);
+
+/**
+ * regmap_init_mmio_clk() - Initialise register map with register clock
+ *
+ * @dev: Device that will be interacted with
+ * @clk_id: register clock consumer ID
+ * @regs: Pointer to memory-mapped IO region
+ * @config: Configuration for register map
+ *
+ * The return value will be an ERR_PTR() on error or a valid pointer to
+ * a struct regmap.
+ */
+struct regmap *regmap_init_mmio_clk(struct device_d *dev, const char *clk_id,
+				    void __iomem *regs,
+				    const struct regmap_config *config);
+
+/**
+ * regmap_init_mmio() - Initialise register map
+ *
+ * @dev: Device that will be interacted with
+ * @regs: Pointer to memory-mapped IO region
+ * @config: Configuration for register map
+ *
+ * The return value will be an ERR_PTR() on error or a valid pointer to
+ * a struct regmap.
+ */
+#define regmap_init_mmio(dev, regs, config)		\
+	regmap_init_mmio_clk(dev, NULL, regs, config)
+
+
+int regmap_mmio_attach_clk(struct regmap *map, struct clk *clk);
+void regmap_mmio_detach_clk(struct regmap *map);
+
 void regmap_exit(struct regmap *map);
 
 struct regmap *dev_get_regmap(struct device_d *dev, const char *name);

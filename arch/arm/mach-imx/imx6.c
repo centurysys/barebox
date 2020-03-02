@@ -11,6 +11,7 @@
  *
  */
 
+#include <abort.h>
 #include <init.h>
 #include <common.h>
 #include <io.h>
@@ -27,8 +28,7 @@
 #include <mach/usb.h>
 #include <asm/mmu.h>
 #include <asm/cache-l2x0.h>
-
-#include <poweroff.h>
+#include <mfd/pfuze.h>
 
 #define CLPCR				0x54
 #define BP_CLPCR_LPM(mode)		((mode) & 0x3)
@@ -114,14 +114,23 @@ static void imx6_init_lowlevel(void)
 	}
 }
 
+static bool imx6_has_ipu(void)
+{
+	if (cpu_mx6_is_mx6qp() || cpu_mx6_is_mx6dp() ||
+	    cpu_mx6_is_mx6q() || cpu_mx6_is_mx6d() ||
+	    cpu_mx6_is_mx6dl() || cpu_mx6_is_mx6s())
+		return true;
+
+	return false;
+}
+
 static void imx6_setup_ipu_qos(void)
 {
 	void __iomem *iomux = (void *)MX6_IOMUXC_BASE_ADDR;
 	void __iomem *fast2 = (void *)MX6_FAST2_BASE_ADDR;
 	uint32_t val;
 
-	if (!cpu_mx6_is_mx6q() && !cpu_mx6_is_mx6d() &&
-	    !cpu_mx6_is_mx6dl() && !cpu_mx6_is_mx6s())
+	if (!imx6_has_ipu())
 		return;
 
 	val = readl(iomux + IOMUXC_GPR4);
@@ -195,6 +204,11 @@ u64 imx6_uid(void)
 	return imx_ocotp_read_uid(IOMEM(MX6_OCOTP_BASE_ADDR));
 }
 
+static void imx6_register_poweroff_init(struct regmap *map)
+{
+	poweroff_handler_register_fn(imx6_pm_stby_poweroff);
+}
+
 int imx6_init(void)
 {
 	const char *cputypestr;
@@ -252,6 +266,8 @@ int imx6_init(void)
 	imx6_setup_ipu_qos();
 	imx6ul_enet_clk_init();
 
+	pfuze_register_init_callback(imx6_register_poweroff_init);
+
 	return 0;
 }
 
@@ -273,12 +289,31 @@ int imx6_devices_init(void)
 	return 0;
 }
 
+static bool imx6_cannot_write_l2x0(void)
+{
+	void __iomem *l2x0_base = IOMEM(0x00a02000);
+	u32 val;
+	/*
+	 * Mask data aborts and try to access the PL210. If OP-TEE is running we
+	 * will receive a data-abort and assume barebox is running in the normal
+	 * world.
+	 */
+	val = readl(l2x0_base + L2X0_PREFETCH_CTRL);
+
+	data_abort_mask();
+	writel(val, l2x0_base + L2X0_PREFETCH_CTRL);
+	return data_abort_unmask();
+}
+
 static int imx6_mmu_init(void)
 {
 	void __iomem *l2x0_base = IOMEM(0x00a02000);
 	u32 val, cache_part, cache_rtl;
 
 	if (!cpu_is_mx6())
+		return 0;
+
+	if (imx6_cannot_write_l2x0())
 		return 0;
 
 	val = readl(l2x0_base + L2X0_CACHE_ID);
@@ -366,7 +401,7 @@ static int imx6_fixup_cpus_register(void)
 }
 device_initcall(imx6_fixup_cpus_register);
 
-void __noreturn imx6_pm_stby_poweroff(void)
+void __noreturn imx6_pm_stby_poweroff(struct poweroff_handler *handler)
 {
 	void *ccm_base = IOMEM(MX6_CCM_BASE_ADDR);
 	void *gpc_base = IOMEM(MX6_GPC_BASE_ADDR);

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
 #ifndef __FILE_TYPE_H
 #define __FILE_TYPE_H
 
@@ -49,6 +50,7 @@ enum filetype {
 	filetype_layerscape_qspi_image,
 	filetype_ubootvar,
 	filetype_stm32_image_v1,
+	filetype_zynq_image,
 	filetype_max,
 };
 

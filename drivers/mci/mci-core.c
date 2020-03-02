@@ -668,10 +668,11 @@ retry_scr:
 static void mci_set_ios(struct mci *mci)
 {
 	struct mci_host *host = mci->host;
-	struct mci_ios ios;
-
-	ios.bus_width = host->bus_width;
-	ios.clock = host->clock;
+	struct mci_ios ios = {
+		.bus_width = host->bus_width,
+		.clock = host->clock,
+		.timing = host->timing,
+	};
 
 	host->set_ios(host, &ios);
 }
@@ -997,6 +998,9 @@ static int mci_startup_sd(struct mci *mci)
 		mci_set_bus_width(mci, MMC_BUS_WIDTH_4);
 	}
 
+	if (mci->tran_speed > 25000000)
+		mci->host->timing = MMC_TIMING_SD_HS;
+
 	mci_set_clock(mci, mci->tran_speed);
 
 	return 0;
@@ -1022,9 +1026,14 @@ static int mci_startup_mmc(struct mci *mci)
 			mci->tran_speed = 52000000;
 		else
 			mci->tran_speed = 26000000;
+
+		host->timing = MMC_TIMING_MMC_HS;
 	}
 
 	mci_set_clock(mci, mci->tran_speed);
+
+	if (!(host->host_caps & (MMC_CAP_4_BIT_DATA | MMC_CAP_8_BIT_DATA)))
+		return 0;
 
 	/*
 	 * Unlike SD, MMC cards dont have a configuration register to notify
@@ -1471,6 +1480,20 @@ static unsigned extract_mtd_year(struct mci *mci)
 	return year;
 }
 
+static const char *mci_timing_tostr(unsigned timing)
+{
+	switch (timing) {
+	case MMC_TIMING_LEGACY:
+		return "legacy";
+	case MMC_TIMING_MMC_HS:
+		return "MMC HS";
+	case MMC_TIMING_SD_HS:
+		return "SD HS";
+	default:
+		return "unknown"; /* shouldn't happen */
+	}
+}
+
 static void mci_print_caps(unsigned caps)
 {
 	printf("  capabilities: %s%s%s%s%s\n",
@@ -1507,6 +1530,7 @@ static void mci_info(struct device_d *dev)
 		bw = 1;
 
 	printf("  current buswidth: %d\n", bw);
+	printf("  current timing: %s\n", mci_timing_tostr(host->timing));
 	mci_print_caps(host->host_caps);
 
 	printf("Card information:\n");
@@ -1799,6 +1823,7 @@ static int mci_detect(struct device_d *dev)
 int mci_register(struct mci_host *host)
 {
 	struct mci *mci;
+	struct param_d *param_probe;
 	int ret;
 
 	mci = xzalloc(sizeof(*mci));
@@ -1830,11 +1855,11 @@ int mci_register(struct mci_host *host)
 
 	dev_info(mci->host->hw_dev, "registered as %s\n", dev_name(&mci->dev));
 
-	mci->param_probe = dev_add_param_bool(&mci->dev, "probe",
+	param_probe = dev_add_param_bool(&mci->dev, "probe",
 			mci_set_probe, NULL, &mci->probe, mci);
 
-	if (IS_ERR(mci->param_probe) && PTR_ERR(mci->param_probe) != -ENOSYS) {
-		ret = PTR_ERR(mci->param_probe);
+	if (IS_ERR(param_probe) && PTR_ERR(param_probe) != -ENOSYS) {
+		ret = PTR_ERR(param_probe);
 		dev_dbg(&mci->dev, "Failed to add 'probe' parameter to the MCI device\n");
 		goto err_unregister;
 	}

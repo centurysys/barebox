@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
 #ifndef __OF_H
 #define __OF_H
 
@@ -113,7 +114,9 @@ struct device_node *of_unflatten_dtb_const(const void *infdt);
 struct cdev;
 
 #ifdef CONFIG_OFTREE
+extern int of_bus_n_addr_cells(struct device_node *np);
 extern int of_n_addr_cells(struct device_node *np);
+extern int of_bus_n_size_cells(struct device_node *np);
 extern int of_n_size_cells(struct device_node *np);
 
 extern struct property *of_find_property(const struct device_node *np,
@@ -328,7 +331,17 @@ static inline struct device_d *of_platform_device_create(struct device_node *np,
 	return NULL;
 }
 
+static inline int of_bus_n_addr_cells(struct device_node *np)
+{
+	return 0;
+}
+
 static inline int of_n_addr_cells(struct device_node *np)
+{
+	return 0;
+}
+
+static inline int of_bus_n_size_cells(struct device_node *np)
 {
 	return 0;
 }

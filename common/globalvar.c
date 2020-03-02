@@ -75,12 +75,18 @@ static int nv_save(const char *name, const char *val)
 	if (ret)
 		return ret;
 
-	if (once) {
-		pr_info("nv variable modified, will save nv variables on shutdown\n");
-		once = 0;
+	if (IS_ENABLED(CONFIG_ENV_HANDLING)) {
+		if (once) {
+			pr_info("nv variable modified, will save nv variables on shutdown\n");
+			once = 0;
+		}
+		nv_dirty = 1;
+	} else {
+		if (once) {
+			pr_info("nv variable modified, but won't be saved in this configuration\n");
+			once = 0;
+		}
 	}
-
-	nv_dirty = 1;
 
 	return 0;
 }
@@ -169,21 +175,24 @@ static int nvvar_device_dispatch(const char *name, struct device_d **dev,
 	return 1;
 }
 
-static int nv_set(struct device_d *dev, struct param_d *p, const char *val)
+static int nv_set(struct device_d *dev, struct param_d *p, const char *name, const char *val)
 {
 	int ret;
 
 	if (!val) {
-		free(p->value);
+		if (p)
+			free(p->value);
 		return 0;
 	}
 
-	ret = dev_set_param(&global_device, p->name, val);
+	ret = dev_set_param(&global_device, name, val);
 	if (ret)
 		return ret;
 
-	free(p->value);
-	p->value = xstrdup(val);
+	if (p) {
+		free(p->value);
+		p->value = xstrdup(val);
+	}
 
 	return 0;
 }
@@ -197,7 +206,7 @@ static int nv_param_set(struct device_d *dev, struct param_d *p, const char *val
 {
 	int ret;
 
-	ret = nv_set(dev, p, val);
+	ret = nv_set(dev, p, p->name, val);
 	if (ret)
 		return ret;
 
@@ -228,7 +237,7 @@ static int __nvvar_add(const char *name, const char *value)
 		return ret;
 
 	if (value)
-		return nv_set(&nv_device, p, value);
+		return nv_set(&nv_device, p, name, value);
 
 	ret = nvvar_device_dispatch(name, &dev, &pname);
 	if (ret > 0)
@@ -236,7 +245,7 @@ static int __nvvar_add(const char *name, const char *value)
 	else
 		value = dev_get_param(&global_device, name);
 
-	if (value) {
+	if (value && p) {
 		free(p->value);
 		p->value = xstrdup(value);
 	}

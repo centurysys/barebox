@@ -26,7 +26,8 @@ obj-$(CONFIG_CONSOLE_FULL)	+= console.o
 obj-$(CONFIG_CONSOLE_SIMPLE)	+= console_simple.o
 obj-y				+= console_countdown.o
 obj-pbl-$(CONFIG_DDR_SPD)	+= ddr_spd.o
-obj-$(CONFIG_ENV_HANDLING)	+= environment.o
+obj-$(CONFIG_ENV_HANDLING)	+= environment.o envfs-core.o
+obj-$(CONFIG_DEFAULT_ENVIRONMENT) += envfs-core.o
 obj-$(CONFIG_ENVIRONMENT_VARIABLES) += env.o
 obj-$(CONFIG_FILETYPE)		+= filetype.o
 CFLAGS_filetype.o = -I$(srctree)/arch/
@@ -66,6 +67,8 @@ obj-$(CONFIG_BAREBOX_UPDATE_IMX_NAND_FCB) += imx-bbu-nand-fcb.o
 obj-$(CONFIG_BOOT)		+= boot.o
 obj-$(CONFIG_SERIAL_DEV_BUS)	+= serdev.o
 obj-$(CONFIG_USBGADGET_START)	+= usbgadget.o
+pbl-$(CONFIG_PBL_OPTEE)		+= optee.o
+obj-$(CONFIG_BOOTM_OPTEE)	+= optee.o
 
 ifdef CONFIG_PASSWORD
 

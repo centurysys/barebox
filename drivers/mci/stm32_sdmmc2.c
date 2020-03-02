@@ -185,31 +185,31 @@ struct stm32_sdmmc2_priv {
 
 #define to_mci_host(mci)	container_of(mci, struct stm32_sdmmc2_priv, mci)
 
-/*
- * Reset the SDMMC with the RCC.SDMMCxRST register bit.
- * This will reset the SDMMC to the reset state and the CPSM and DPSM
- * to the Idle state. SDMMC is disabled, Signals Hiz.
- */
 static int stm32_sdmmc2_reset(struct mci_host *mci, struct device_d *mci_dev)
 {
 	struct stm32_sdmmc2_priv *priv = to_mci_host(mci);
 
+	/*
+	 * Reset the SDMMC with the RCC.SDMMCxRST register bit.
+	 * This will reset the SDMMC to the reset state and the CPSM and DPSM
+	 * to the Idle state. SDMMC is disabled, Signals Hiz.
+	 */
 	reset_control_assert(priv->reset_ctl);
 	udelay(2);
 	reset_control_deassert(priv->reset_ctl);
 
-	/* init the needed SDMMC register after reset */
-	writel(priv->pwr_reg_msk, priv->base + SDMMC_POWER);
+	/*
+	 * Set the SDMMC in power-cycle state.
+	 * This will make that the SDMMC_D[7:0],
+	 * SDMMC_CMD and SDMMC_CK are driven low, to prevent the card from being
+	 * supplied through the signal lines.
+	 */
+	writel(SDMMC_POWER_PWRCTRL_CYCLE | priv->pwr_reg_msk,
+	       priv->base + SDMMC_POWER);
 
 	return 0;
 }
 
-/*
- * Set the SDMMC in power-cycle state.
- * This will make that the SDMMC_D[7:0],
- * SDMMC_CMD and SDMMC_CK are driven low, to prevent the card from being
- * supplied through the signal lines.
- */
 static void stm32_sdmmc2_pwrcycle(struct stm32_sdmmc2_priv *priv)
 {
 	if ((readl(priv->base + SDMMC_POWER) & SDMMC_POWER_PWRCTRL_MASK) ==
@@ -217,8 +217,6 @@ static void stm32_sdmmc2_pwrcycle(struct stm32_sdmmc2_priv *priv)
 		return;
 
 	stm32_sdmmc2_reset(&priv->mci, priv->dev);
-	writel(SDMMC_POWER_PWRCTRL_CYCLE | priv->pwr_reg_msk,
-	       priv->base + SDMMC_POWER);
 }
 
 /*
@@ -256,6 +254,7 @@ static void stm32_sdmmc2_pwron(struct stm32_sdmmc2_priv *priv)
 	       priv->base + SDMMC_POWER);
 
 	/* during the first 74 SDMMC_CK cycles the SDMMC is still disabled. */
+	udelay(DIV_ROUND_UP(74 * USEC_PER_SEC, priv->mci.clock));
 }
 
 static void stm32_sdmmc2_start_data(struct stm32_sdmmc2_priv *priv,
@@ -535,8 +534,6 @@ retry_cmd:
 		dev_warn(priv->dev, "%s: cmd %d failed, retrying ...\n",
 			 __func__, cmd->cmdidx);
 
-		stm32_sdmmc2_pwrcycle(priv);
-		stm32_sdmmc2_pwron(priv);
 		retry--;
 
 		goto retry_cmd;
@@ -555,7 +552,7 @@ static void stm32_sdmmc2_set_ios(struct mci_host *mci, struct mci_ios *ios)
 	u32 sys_clock = clk_get_rate(priv->clk);
 	u32 clk = 0;
 
-	dev_dbg(priv->dev, "%s: bus_with = %d, clock = %d\n", __func__,
+	dev_dbg(priv->dev, "%s: bus_width = %d, clock = %d\n", __func__,
 		mci->bus_width, mci->clock);
 
 	if (mci->clock)
@@ -577,9 +574,9 @@ static void stm32_sdmmc2_set_ios(struct mci_host *mci, struct mci_ios *ios)
 			clk = SDMMC_CLKCR_CLKDIV_MAX;
 	}
 
-	if (mci->bus_width == 4)
+	if (mci->bus_width == MMC_BUS_WIDTH_4)
 		clk |= SDMMC_CLKCR_WIDBUS_4;
-	if (mci->bus_width == 8)
+	if (mci->bus_width == MMC_BUS_WIDTH_8)
 		clk |= SDMMC_CLKCR_WIDBUS_8;
 
 	writel(clk | priv->clk_reg_msk | SDMMC_CLKCR_HWFC_EN,
@@ -625,7 +622,7 @@ static int stm32_sdmmc2_probe(struct amba_device *adev,
 
 	priv->reset_ctl = reset_control_get(dev, NULL);
 	if (IS_ERR(priv->reset_ctl))
-		priv->reset_ctl = NULL;
+		return PTR_ERR(priv->reset_ctl);
 
 	mci->f_min = 400000;
 	/* f_max is taken from kernel v5.3 variant_stm32_sdmmc */
@@ -634,10 +631,10 @@ static int stm32_sdmmc2_probe(struct amba_device *adev,
 
 	mci_of_parse(&priv->mci);
 
-	if (mci->host_caps & (MMC_CAP_4_BIT_DATA | MMC_CAP_8_BIT_DATA)) {
-		dev_notice(dev, "Fixing bus-width to 1 due to driver limitation\n");
-		mci->host_caps &= ~(MMC_CAP_4_BIT_DATA | MMC_CAP_8_BIT_DATA);
-	}
+	if (mci->f_max >= 26000000)
+		mci->host_caps |= MMC_CAP_MMC_HIGHSPEED;
+	if (mci->f_max >= 52000000)
+		mci->host_caps |= MMC_CAP_MMC_HIGHSPEED_52MHZ;
 
 	return mci_register(&priv->mci);
 
