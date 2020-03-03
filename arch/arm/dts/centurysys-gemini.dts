@@ -1,0 +1,56 @@
+// SPDX-License-Identifier: GPL-2.0 OR X11
+/*
+ * Copyright (C) 2019 Oleksij Rempel - Pengutronix
+ */
+
+#include <arm/centurysys-gemini.dts>
+
+/ {
+	chosen {
+		environment {
+			compatible = "barebox,environment";
+			device-path = &barebox_env;
+		};
+	};
+
+	memory {
+		reg = <0x20000000 0x20000000>;
+	};
+};
+
+&spi0 {
+	m25p80@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "at91boot";
+			reg = <0x0 0x8000>;
+		};
+
+		barebox_env: partition@1 {
+			label = "barebox.env";
+			reg = <0x8000 0x8000>;
+		};
+
+		barebox_bin: partition@2 {
+			label = "barebox.bin";
+			reg = <0x10000 0x80000>;
+		};
+
+		hist_firmup: partition@3 {
+			label = "hist_firmup";
+			reg = <0x90000 0x20000>;
+		};
+
+		hist_boot: partition@4 {
+			label = "hist_boot";
+			reg = <0xb0000 0x50000>;
+		};
+
+		oops: partition@5 {
+			label = "OOPS";
+			reg = <0x100000 0x100000>;
+		};
+	};
+};

@@ -1,0 +1,8 @@
+#!/bin/sh
+
+global.bootm.oftree="/mnt/sd/sama5d2.dtb"
+global.bootm.image="/mnt/sd/uImage"
+
+bootargs-ip
+
+global.linux.bootargs.dyn.root="root=/dev/mmcblk1p2 rw rootfstype=ext4 rootwait"

@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# SD card slot, first partition
+mkdir -p /mnt/sd
+mount -t fat /dev/sd.0 /mnt/sd

@@ -21,3 +21,7 @@ image-$(CONFIG_MACH_SAMA5D27_SOM1) += barebox-sama5d27-som1-ek.img
 pblb-$(CONFIG_MACH_SAMA5D2_XPLAINED) += start_sama5d2_xplained
 FILE_barebox-sama5d2_xplained.img = start_sama5d2_xplained.pblb
 image-$(CONFIG_MACH_SAMA5D2_XPLAINED) += barebox-sama5d2_xplained.img
+
+pblb-$(CONFIG_MACH_CENTURYSYS_GEMINI) += start_centursys_gemini
+FILE_barebox-centurysys-gemini.img = start_centurysys_gemini.pblb
+image-$(CONFIG_MACH_CENTURYSYS_GEMINI) += barebox-centurysys-gemini.img
