@@ -98,6 +98,15 @@ static u8 sama5d2_sdhci_readb(struct sdhci *sdhci, int reg)
 	return readb(p->base + reg);
 }
 
+static void sama5d2_sdhci_set_force_card_detect(struct sama5d2_sdhci *host)
+{
+	u8 mc1r;
+
+	mc1r = sama5d2_sdhci_readb(&host->sdhci, SDMMC_MC1R);
+	mc1r |= SDMMC_MC1R_FCD;
+	sama5d2_sdhci_writeb(&host->sdhci, SDMMC_MC1R, mc1r);
+}
+
 static int sama5d2_sdhci_wait_for_done(struct sama5d2_sdhci *host, u16 mask)
 {
 	u16 status;
@@ -315,6 +324,11 @@ static int sama5d2_sdhci_mci_init(struct mci_host *mci, struct device_d *dev)
 
 	/* reset sdhci controller */
 	sdhci_write8(&host->sdhci, SDHCI_SOFTWARE_RESET, SDHCI_RESET_ALL);
+
+	/* card is non-removable ? */
+	if (mci->non_removable) {
+		sama5d2_sdhci_set_force_card_detect(host);
+	}
 
 	/* wait for reset completion */
 	start = get_time_ns();
